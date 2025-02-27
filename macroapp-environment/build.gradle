@@ -1,17 +1,17 @@
 buildscript {
     repositories {
         google()
-        mavenCentral()  // Replace jcenter() as it’s deprecated
+        mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.0.0'  // Update from 4.2.0
+        classpath 'com.android.tools.build:gradle:7.0.0'  // Updated to 7.0.0
     }
 }
 
 allprojects {
     repositories {
         google()
-        mavenCentral()  // Replace jcenter()
+        mavenCentral()
     }
 }
 
