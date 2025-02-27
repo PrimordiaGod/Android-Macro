@@ -1,4 +1,5 @@
-macroapp-environment/gradlew.bat
+@echo off
+gradlew %*
 
 
 
