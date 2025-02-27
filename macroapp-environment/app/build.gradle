@@ -1,7 +1,8 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 33 // Updated from 31
+    compileSdkVersion 33
+    namespace "com.example.slash" // Added namespace
     defaultConfig {
         applicationId "com.example.slash"
         minSdkVersion 21
@@ -22,7 +23,7 @@ apply plugin: 'com.google.gms.google-services'
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'com.google.android.gms:play-services-auth:20.7.0' // Optional, can phase out with Credential Manager
+    implementation 'com.google.android.gms:play-services-auth:20.7.0'
 
     // Credential Manager
     implementation "androidx.credentials:credentials:1.3.0"
