@@ -1,0 +1,15 @@
+# Android Studio build files
+/.idea/
+*.iml
+/build/
+/app/build/
+/gradle/
+
+# Local configuration files
+local.properties
+
+# Log files
+*.log
+
+# Miscellaneous
+.DS_Store
