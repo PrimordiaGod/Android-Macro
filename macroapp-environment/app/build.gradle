@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 31
+    compileSdkVersion 33 // Updated from 31
     defaultConfig {
         applicationId "com.example.slash"
         minSdkVersion 21
@@ -17,25 +17,23 @@ android {
     }
 }
 
-// Firebase setup requires google-services plugin
 apply plugin: 'com.google.gms.google-services'
 
 dependencies {
-    // Existing dependencies
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'androidx.appcompat:appcompat:1.6.1' // Updated to latest stable version
-    implementation 'com.google.android.gms:play-services-auth:20.7.0' // Keep for backward compatibility (optional)
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.gms:play-services-auth:20.7.0' // Optional, can phase out with Credential Manager
 
-    // Credential Manager for modern Google Sign-In
+    // Credential Manager
     implementation "androidx.credentials:credentials:1.3.0"
 
-    // Firebase Authentication for account management
+    // Firebase Authentication
     implementation 'com.google.firebase:firebase-auth:23.0.0'
 
-    // Navigation Component for menus
+    // Navigation Component
     implementation "androidx.navigation:navigation-fragment:2.7.7"
     implementation "androidx.navigation:navigation-ui:2.7.7"
 
-    // Material Components for Navigation Drawer or Bottom Navigation UI
+    // Material Components
     implementation 'com.google.android.material:material:1.12.0'
 }
