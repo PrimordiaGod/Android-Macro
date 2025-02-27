@@ -5,10 +5,10 @@ workflows:
       vars:
         PACKAGE_NAME: "com.example.treachery"
     scripts:
-      - name: Build Android App
+      - name: List Gradle Tasks
         script: |
-          cd macroapp-environment && gradle :app:assembleDebug
-          echo "Build completed in $(pwd)"
+          cd macroapp-environment && gradle :app:tasks --all
+          echo "Tasks listed in $(pwd)"
     artifacts:
       - macroapp-environment/app/build/outputs/**/*.apk
     triggering:
