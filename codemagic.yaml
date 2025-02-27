@@ -7,8 +7,7 @@ workflows:
     scripts:
       - name: Build Android App
         script: |
-          # Run Gradle directly from the macroapp-environment directory
-          cd macroapp-environment && gradle assembleDebug
+          cd macroapp-environment && gradle :app:assembleDebug
           echo "Build completed in $(pwd)"
     artifacts:
       - macroapp-environment/app/build/outputs/**/*.apk
