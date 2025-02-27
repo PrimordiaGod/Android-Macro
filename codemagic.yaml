@@ -1,11 +1,17 @@
 workflows:
   android-workflow:
-    name: Android Build
+    name: Slash Android Build
+    environment:
+      gradle_version: 8.2
     scripts:
       - name: Build Android App
         script: |
-          cd macroapp-environment  # Adjust this to the directory containing gradlew
-          chmod +x gradlew       # Grant executable permissions
-          ./gradlew assembleDebug 
+          cd macroapp-environment
+          gradle :app:assembleDebug
+          echo "Build completed in $(pwd)"
     artifacts:
-      - macroapp-environment/**/build/outputs/**/*.apk
+      - macroapp-environment/app/build/outputs/**/*.apk
+    triggering:
+      events:
+        - push
+        - pull_request
