@@ -1,13 +1,10 @@
 workflows:
   android-workflow:
-    name: Android Build
+    name: Treachery Android Build
     environment:
-      groups:
-        # Define any environment variables here if needed (e.g., for Google Sign-In client ID)
-        # - google_credentials
       vars:
-        # Specify the Android package name
-        PACKAGE_NAME: "com.example.macroapp"
+        # Updated package name to reflect the app name "Treachery"
+        PACKAGE_NAME: "com.example.treachery"
     scripts:
       - name: Set up project path
         script: |
@@ -15,7 +12,7 @@ workflows:
           echo "Working directory set to $(pwd)"
       - name: Build Android App
         script: |
-          # Ensure Gradle wrapper exists, or use Codemagic's default Gradle
+          # Check for Gradle wrapper, fallback to Codemagic's Gradle
           if [ -f ./gradlew ]; then
             ./gradlew assembleDebug
           else
@@ -27,4 +24,4 @@ workflows:
       events:
         - push
         - pull_request
-    branch: main  
+    branch: main
