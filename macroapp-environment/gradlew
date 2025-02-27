@@ -21,14 +21,12 @@ else
     JAVA_EXE=java
 fi
 
-# Download wrapper JAR and Gradle distro if missing
+# Download wrapper JAR if missing
 if [ ! -f "$GRADLE_WRAPPER_JAR" ]; then
     echo "Fetching Gradle Wrapper JAR..."
     mkdir -p "$GRADLE_WRAPPER_DIR"
-    # Download the full Gradle distro
     curl -L "$GRADLE_DIST_URL" -o gradle.zip
     unzip -q gradle.zip -d gradle_temp
-    # Extract just the wrapper JAR
     cp gradle_temp/gradle-*/lib/gradle-wrapper.jar "$GRADLE_WRAPPER_JAR"
     rm -rf gradle.zip gradle_temp
 fi
