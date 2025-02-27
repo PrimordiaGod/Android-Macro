@@ -24,4 +24,4 @@ workflows:
       events:
         - push
         - pull_request
-    branch: main
+  
