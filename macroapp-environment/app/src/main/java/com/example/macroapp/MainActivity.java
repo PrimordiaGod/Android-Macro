@@ -1,4 +1,4 @@
-package com.example.treachery;
+package com.example.slash;
 // Rest of the code remains unchanged
 
 import android.content.Intent;
