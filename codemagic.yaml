@@ -5,14 +5,11 @@ workflows:
       vars:
         PACKAGE_NAME: "com.example.treachery"
     scripts:
-      - name: Set up project path
-        script: |
-          cd macroapp-environment
-          echo "Working directory set to $(pwd)"
       - name: Build Android App
         script: |
-          # Run Gradle from the current directory (macroapp-environment)
-          gradle assembleDebug
+          # Run Gradle directly from the macroapp-environment directory
+          cd macroapp-environment && gradle assembleDebug
+          echo "Build completed in $(pwd)"
     artifacts:
       - macroapp-environment/app/build/outputs/**/*.apk
     triggering:
