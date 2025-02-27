@@ -1,18 +1,11 @@
 workflows:
   android-workflow:
     name: Slash Android Build
-    environment:
-      vars:
-        PACKAGE_NAME: "com.example.slash"
     scripts:
       - name: Build Android App
         script: |
-          cd macroapp-environment
-          ./gradlew :app:assembleDebug
-          echo "Build completed in $(pwd)"
+          cd macroapp-environment  # Navigate to the directory with gradlew
+          chmod +x gradlew       # Grant executable permissions
+          ./gradlew assembleDebug # Run your build command
     artifacts:
-      - macroapp-environment/app/build/outputs/**/*.apk
-    triggering:
-      events:
-        - push
-        - pull_request
+      - macroapp-environment/**/build/outputs/**/*.apk
