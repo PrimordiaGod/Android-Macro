@@ -1,12 +1,12 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 33
+    compileSdkVersion 34 // Updated from 33
     namespace "com.example.slash"
     defaultConfig {
         applicationId "com.example.slash"
         minSdkVersion 21
-        targetSdkVersion 31
+        targetSdkVersion 31 // Can stay at 31 for now
         versionCode 1
         versionName "1.0"
     }
