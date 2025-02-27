@@ -32,9 +32,9 @@ public class MainActivity extends AppCompatActivity {
         // Initialize Firebase Auth
         mAuth = FirebaseAuth.getInstance();
 
-        // Configure Google Sign-In
+        // Configure Google Sign-In with Web Client ID
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken("YOUR_WEB_CLIENT_ID") // From Firebase Console
+                .requestIdToken("926707094374-p3gsvu1guc9is38pekf2s8ovkcu4nb1r.apps.googleusercontent.com") // Replace with your Web Client ID
                 .requestEmail()
                 .build();
 
@@ -46,7 +46,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        // Check if user is signed in
         if (mAuth.getCurrentUser() != null) {
             updateUI();
         }
