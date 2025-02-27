@@ -1,2 +1,2 @@
 #!/bin/sh
-exec "./gradlew" "$@"
+GRADLE_HOME="$HOME/.gradle" exec "$PWD/gradle/wrapper/gradle-wrapper.jar" "$@"
