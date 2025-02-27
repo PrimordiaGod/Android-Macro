@@ -2,17 +2,17 @@ workflows:
   android-workflow:
     name: Slash Android Build
     environment:
-      gradle_version: 8.2  # Forces Codemagic to use Gradle 8.2
       vars:
-        PACKAGE_NAME: "com.example.slash"
+        PACKAGE_NAME: "com.example.slash"  
     scripts:
       - name: Build Android App
         script: |
           cd macroapp-environment
-          gradle :app:assembleDebug  # Uses Codemagic’s Gradle instead of ./gradlew
+          chmod +x gradlew  # Ensure gradlew is executable
+          ./gradlew assembleDebug  # Use the wrapper
           echo "Build completed in $(pwd)"
     artifacts:
-      - macroapp-environment/app/build/outputs/**/*.apk
+      - macroapp-environment/**/build/outputs/**/*.apk
     triggering:
       events:
         - push
