@@ -2,21 +2,21 @@ workflows:
   android-workflow:
     name: Slash Android Build
     environment:
-      gradle_version: 8.2
       vars:
         PACKAGE_NAME: "com.example.slash"
     scripts:
       - name: Install Gradle 8.2
         script: |
           cd macroapp-environment
-          # Ensure Gradle 8.2 is downloaded and used
+          # Download and set up Gradle 8.2
           wget -q https://services.gradle.org/distributions/gradle-8.2-bin.zip
           unzip -q gradle-8.2-bin.zip
           export PATH=$PWD/gradle-8.2/bin:$PATH
-          gradle --version  # Verify version
+          gradle --version  # Verify the version
       - name: Build Android App
         script: |
           cd macroapp-environment
+          export PATH=$PWD/gradle-8.2/bin:$PATH  # Ensure Gradle 8.2 is still in PATH
           gradle :app:assembleDebug
           echo "Build completed in $(pwd)"
     artifacts:
