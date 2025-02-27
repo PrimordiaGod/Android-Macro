@@ -1,14 +1,14 @@
 workflows:
   android-workflow:
-    name: Treachery Android Build
+    name: Slash Android Build
     environment:
       vars:
-        PACKAGE_NAME: "com.example.treachery"
+        PACKAGE_NAME: "com.example.slash"
     scripts:
-      - name: List Gradle Tasks
+      - name: Build Android App
         script: |
-          cd macroapp-environment && gradle :app:tasks --all
-          echo "Tasks listed in $(pwd)"
+          cd macroapp-environment && gradle :app:assembleDebug
+          echo "Build completed in $(pwd)"
     artifacts:
       - macroapp-environment/app/build/outputs/**/*.apk
     triggering:
