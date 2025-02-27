@@ -3,7 +3,6 @@ workflows:
     name: Treachery Android Build
     environment:
       vars:
-        # Updated package name to reflect the app name "Treachery"
         PACKAGE_NAME: "com.example.treachery"
     scripts:
       - name: Set up project path
@@ -12,16 +11,11 @@ workflows:
           echo "Working directory set to $(pwd)"
       - name: Build Android App
         script: |
-          # Check for Gradle wrapper, fallback to Codemagic's Gradle
-          if [ -f ./gradlew ]; then
-            ./gradlew assembleDebug
-          else
-            gradle assembleDebug
-          fi
+          # Run Gradle from the current directory (macroapp-environment)
+          gradle assembleDebug
     artifacts:
       - macroapp-environment/app/build/outputs/**/*.apk
     triggering:
       events:
         - push
         - pull_request
-  
