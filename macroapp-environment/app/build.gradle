@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 33
-    namespace "com.example.slash" // Added namespace
+    namespace "com.example.slash"
     defaultConfig {
         applicationId "com.example.slash"
         minSdkVersion 21
