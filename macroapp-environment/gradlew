@@ -1,2 +1,20 @@
 #!/bin/sh
-GRADLE_HOME="$HOME/.gradle" exec "$PWD/gradle/wrapper/gradle-wrapper.jar" "$@"
+
+# Determine the script's directory
+APP_HOME=$(dirname "$0")
+if [ "$APP_HOME" = "." ]; then
+    APP_HOME=$(pwd)
+fi
+
+# Set Gradle wrapper JAR path relative to script location
+GRADLE_WRAPPER_JAR="$APP_HOME/gradle/wrapper/gradle-wrapper.jar"
+
+# Check if Java is available
+if [ -n "$JAVA_HOME" ]; then
+    JAVA_EXE="$JAVA_HOME/bin/java"
+else
+    JAVA_EXE=java
+fi
+
+# Execute Gradle wrapper
+exec "$JAVA_EXE" -jar "$GRADLE_WRAPPER_JAR" "$@"
