@@ -1,10 +1,11 @@
 workflows:
   android-workflow:
-    name: Slash Android Build
+    name: Android Build
     scripts:
       - name: Build Android App
         script: |
-          cd macroapp-environment
-          ./gradlew assembleDebug
+          cd macroapp-environment  # Adjust this to the directory containing gradlew
+          chmod +x gradlew       # Grant executable permissions
+          ./gradlew assembleDebug 
     artifacts:
       - macroapp-environment/**/build/outputs/**/*.apk
