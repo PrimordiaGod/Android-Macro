@@ -5,7 +5,6 @@ workflows:
       - name: Build Android App
         script: |
           cd macroapp-environment
-          chmod +x gradlew
           ./gradlew assembleDebug
     artifacts:
       - macroapp-environment/**/build/outputs/**/*.apk
