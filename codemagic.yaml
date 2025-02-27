@@ -2,12 +2,13 @@ workflows:
   android-workflow:
     name: Slash Android Build
     environment:
-      gradle_version: 8.2
+      vars:
+        PACKAGE_NAME: "com.example.slash"
     scripts:
       - name: Build Android App
         script: |
           cd macroapp-environment
-          gradle :app:assembleDebug
+          ./gradlew :app:assembleDebug
           echo "Build completed in $(pwd)"
     artifacts:
       - macroapp-environment/app/build/outputs/**/*.apk
