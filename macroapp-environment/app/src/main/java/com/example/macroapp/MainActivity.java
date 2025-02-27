@@ -1,4 +1,5 @@
-package com.example.macroapp;
+package com.example.treachery;
+// Rest of the code remains unchanged
 
 import android.content.Intent;
 import android.os.Bundle;
