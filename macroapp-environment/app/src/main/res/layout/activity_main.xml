@@ -3,11 +3,21 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:gravity="center">
+    android:gravity="center"
+    android:padding="16dp">
 
-    <com.google.android.gms.common.SignInButton
-        android:id="@+id/sign_in_button"
+    <EditText
+        android:id="@+id/token_input"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter Access Token"
+        android:inputType="text" />
+
+    <Button
+        android:id="@+id/submit_button"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:text="Submit"
+        android:layout_marginTop="16dp" />
 
 </LinearLayout>
