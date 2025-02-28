@@ -1,53 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:layout_height="match_parent">
 
-    <TextView
-        android:id="@+id/welcome_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Welcome to Macro App"
-        android:textSize="24sp"
-        android:layout_gravity="center" />
-
-    <EditText
-        android:id="@+id/profile_name_input"
+    <!-- Main content: Macro Interface -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Enter your name"
-        android:inputType="textPersonName"
-        android:layout_marginTop="16dp" />
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-    <Button
-        android:id="@+id/save_name_button"
+        <TextView
+            android:id="@+id/macro_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Macro Status: Idle" />
+
+        <Button
+            android:id="@+id/record_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Record Macro" />
+
+        <Button
+            android:id="@+id/replay_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Replay Macro" />
+
+        <!-- Placeholder for macro UI elements -->
+    </LinearLayout>
+
+    <!-- Navigation Drawer -->
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/nav_view"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Save Name"
-        android:layout_marginTop="8dp" />
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        app:menu="@menu/drawer_menu" />
 
-    <EditText
-        android:id="@+id/macro_settings_input"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Enter macro settings (e.g., JSON or text)"
-        android:inputType="textMultiLine"
-        android:layout_marginTop="16dp" />
-
-    <Button
-        android:id="@+id/save_settings_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Save Settings"
-        android:layout_marginTop="8dp" />
-
-    <Button
-        android:id="@+id/sign_out_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Sign Out"
-        android:layout_marginTop="16dp" />
-
-</LinearLayout>
+</androidx.drawerlayout.widget.DrawerLayout>
