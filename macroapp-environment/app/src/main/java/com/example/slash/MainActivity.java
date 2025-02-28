@@ -7,14 +7,13 @@ import android.widget.EditText;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.firebase.firestore.FirebaseFirestore;
+import org.json.JSONException;
+import org.json.JSONObject;
 import java.text.SimpleDateFormat;
-import java.util.HashMap;
-import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
     private FirebaseFirestore db;
     private EditText tokenInput;
-    private EditText expirationInput;
     private Button submitButton;
 
     @Override
@@ -24,45 +23,59 @@ public class MainActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
         tokenInput = findViewById(R.id.token_input);
-        expirationInput = findViewById(R.id.expiration_input);
         submitButton = findViewById(R.id.submit_button);
 
         submitButton.setOnClickListener(v -> {
-            String token = tokenInput.getText().toString().trim();
-            String expiration = expirationInput.getText().toString().trim();
-            if (!token.isEmpty() && !expiration.isEmpty()) {
-                validateAndStoreToken(token, expiration);
+            String tokenJson = tokenInput.getText().toString().trim();
+            if (!tokenJson.isEmpty()) {
+                validateToken(tokenJson);
             } else {
-                Toast.makeText(this, "Please enter both token and expiration", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Please enter a token", Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-    private void validateAndStoreToken(String token, String expiration) {
+    private void validateToken(String tokenJson) {
         try {
+            // Parse the JSON token response
+            JSONObject json = new JSONObject(tokenJson);
+            String token = json.getString("token");
+            String expiration = json.getString("expiration");
+
+            // Parse the expiration date
             long expirationTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-                .parse(expiration).getTime();
+                    .parse(expiration).getTime();
             long currentTime = System.currentTimeMillis();
 
-            if (currentTime < expirationTime) {
-                Map<String, Object> tokenData = new HashMap<>();
-                tokenData.put("token", token);
-                tokenData.put("expiration", expirationTime);
+            if (currentTime >= expirationTime) {
+                Toast.makeText(this, "Token has expired", Toast.LENGTH_LONG).show();
+                return;
+            }
 
-                db.collection("tokens").document(token).set(tokenData)
-                    .addOnSuccessListener(aVoid -> {
-                        Toast.makeText(this, "Access granted!", Toast.LENGTH_SHORT).show();
-                        startActivity(new Intent(MainActivity.this, HomeActivity.class));
-                        finish();
+            // Check if token exists in Firestore
+            db.collection("tokens").document(token).get()
+                    .addOnSuccessListener(document -> {
+                        if (document.exists()) {
+                            long storedExpiration = document.getLong("expiration");
+                            if (currentTime < storedExpiration) {
+                                Toast.makeText(this, "Access granted!", Toast.LENGTH_SHORT).show();
+                                startActivity(new Intent(MainActivity.this, HomeActivity.class));
+                                finish();
+                            } else {
+                                Toast.makeText(this, "Token has expired", Toast.LENGTH_LONG).show();
+                            }
+                        } else {
+                            Toast.makeText(this, "Invalid token", Toast.LENGTH_LONG).show();
+                        }
                     })
                     .addOnFailureListener(e -> {
-                        Toast.makeText(this, "Error storing token: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(this, "Error validating token: " + e.getMessage(), Toast.LENGTH_LONG).show();
                     });
-            } else {
-                Toast.makeText(this, "Token has expired", Toast.LENGTH_LONG).show();
-            }
+
+        } catch (JSONException e) {
+            Toast.makeText(this, "Invalid token format: " + e.getMessage(), Toast.LENGTH_LONG).show();
         } catch (Exception e) {
-            Toast.makeText(this, "Invalid expiration format: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Error processing token: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 }
