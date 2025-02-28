@@ -1,5 +1,6 @@
 package com.example.slash;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
@@ -44,8 +45,9 @@ public class MainActivity extends AppCompatActivity {
                         tokenData.put("expiration", expirationTime);
                         db.collection("tokens").document(token).set(tokenData)
                             .addOnSuccessListener(aVoid -> {
-                                Toast.makeText(this, "Token saved: " + token, Toast.LENGTH_LONG).show();
-                                // Next step (e.g., redirect or update UI)
+                                Toast.makeText(this, "Token valid: " + token, Toast.LENGTH_SHORT).show();
+                                startActivity(new Intent(MainActivity.this, HomeActivity.class));
+                                finish();
                             })
                             .addOnFailureListener(e -> Log.e("Firestore", "Error: " + e.getMessage()));
                     } else {
