@@ -31,6 +31,12 @@
             android:text="Replay Macro" />
 
         <Button
+            android:id="@+id/crop_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Crop Screen" />
+
+        <Button
             android:id="@+id/action_button_1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
