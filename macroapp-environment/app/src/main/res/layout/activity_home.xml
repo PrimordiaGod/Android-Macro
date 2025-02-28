@@ -3,21 +3,51 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:gravity="center">
+    android:padding="16dp">
 
     <TextView
+        android:id="@+id/welcome_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Welcome to Macro App Environment"
+        android:text="Welcome to Macro App"
         android:textSize="24sp"
-        android:layout_marginBottom="20dp" />
+        android:layout_gravity="center" />
+
+    <EditText
+        android:id="@+id/profile_name_input"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter your name"
+        android:inputType="textPersonName"
+        android:layout_marginTop="16dp" />
+
+    <Button
+        android:id="@+id/save_name_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Save Name"
+        android:layout_marginTop="8dp" />
+
+    <EditText
+        android:id="@+id/macro_settings_input"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter macro settings (e.g., JSON or text)"
+        android:inputType="textMultiLine"
+        android:layout_marginTop="16dp" />
+
+    <Button
+        android:id="@+id/save_settings_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Save Settings"
+        android:layout_marginTop="8dp" />
 
     <Button
         android:id="@+id/sign_out_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Sign Out" />
+        android:text="Sign Out"
+        android:layout_marginTop="16dp" />
 
 </LinearLayout>
-
-
