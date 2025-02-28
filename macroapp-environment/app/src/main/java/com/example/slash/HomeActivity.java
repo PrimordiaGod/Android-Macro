@@ -6,70 +6,93 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
-import org.json.JSONException;
-import org.json.JSONObject;
-import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MainActivity extends AppCompatActivity {
+public class HomeActivity extends AppCompatActivity {
+    private FirebaseAuth mAuth;
     private FirebaseFirestore db;
-    private EditText tokenInput;
-    private Button submitButton;
+    private EditText profileNameInput;
+    private EditText macroSettingsInput;
+    private Button saveNameButton;
+    private Button saveSettingsButton;
+    private Button signOutButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_home);
 
+        mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
-        tokenInput = findViewById(R.id.token_input);
-        submitButton = findViewById(R.id.submit_button);
+        profileNameInput = findViewById(R.id.profile_name_input);
+        macroSettingsInput = findViewById(R.id.macro_settings_input);
+        saveNameButton = findViewById(R.id.save_name_button);
+        saveSettingsButton = findViewById(R.id.save_settings_button);
+        signOutButton = findViewById(R.id.sign_out_button);
 
-        submitButton.setOnClickListener(v -> {
-            String tokenJson = tokenInput.getText().toString().trim();
-            if (!tokenJson.isEmpty()) {
-                validateAndStoreToken(tokenJson);
+        // Load existing profile data
+        loadProfile();
+
+        // Save name
+        saveNameButton.setOnClickListener(v -> {
+            String name = profileNameInput.getText().toString().trim();
+            if (!name.isEmpty()) {
+                saveProfileField("name", name);
             } else {
-                Toast.makeText(this, "Please enter a token", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Please enter a name", Toast.LENGTH_SHORT).show();
             }
         });
+
+        // Save macro settings
+        saveSettingsButton.setOnClickListener(v -> {
+            String settings = macroSettingsInput.getText().toString().trim();
+            if (!settings.isEmpty()) {
+                saveProfileField("macro_settings", settings);
+            } else {
+                Toast.makeText(this, "Please enter macro settings", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        // Sign out
+        signOutButton.setOnClickListener(v -> signOut());
     }
 
-    private void validateAndStoreToken(String tokenJson) {
-        try {
-            // Parse the JSON token response
-            JSONObject json = new JSONObject(tokenJson);
-            String token = json.getString("token");
-            String expiration = json.getString("expiration");
+    private void loadProfile() {
+        String uid = mAuth.getCurrentUser().getUid();
+        db.collection("users").document(uid).get()
+            .addOnSuccessListener(document -> {
+                if (document.exists()) {
+                    String name = document.getString("name");
+                    String settings = document.getString("macro_settings");
+                    if (name != null) profileNameInput.setText(name);
+                    if (settings != null) macroSettingsInput.setText(settings);
+                }
+            })
+            .addOnFailureListener(e -> {
+                Toast.makeText(this, "Failed to load profile: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            });
+    }
 
-            // Parse the expiration date
-            long expirationTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-                    .parse(expiration).getTime();
-            long currentTime = System.currentTimeMillis();
+    private void saveProfileField(String field, String value) {
+        String uid = mAuth.getCurrentUser().getUid();
+        Map<String, Object> profileData = new HashMap<>();
+        profileData.put(field, value);
 
-            if (currentTime < expirationTime) {
-                Map<String, Object> tokenData = new HashMap<>();
-                tokenData.put("token", token);
-                tokenData.put("expiration", expirationTime);
+        db.collection("users").document(uid).set(profileData, com.google.firebase.firestore.SetOptions.merge())
+            .addOnSuccessListener(aVoid -> {
+                Toast.makeText(this, field.equals("name") ? "Name saved!" : "Settings saved!", Toast.LENGTH_SHORT).show();
+            })
+            .addOnFailureListener(e -> {
+                Toast.makeText(this, "Failed to save " + field + ": " + e.getMessage(), Toast.LENGTH_LONG).show();
+            });
+    }
 
-                db.collection("tokens").document(token).set(tokenData)
-                        .addOnSuccessListener(aVoid -> {
-                            Toast.makeText(this, "Access granted!", Toast.LENGTH_SHORT).show();
-                            startActivity(new Intent(MainActivity.this, HomeActivity.class));
-                            finish();
-                        })
-                        .addOnFailureListener(e -> {
-                            Toast.makeText(this, "Error storing token: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                        });
-            } else {
-                Toast.makeText(this, "Token has expired", Toast.LENGTH_LONG).show();
-            }
-        } catch (JSONException e) {
-            Toast.makeText(this, "Invalid token format: " + e.getMessage(), Toast.LENGTH_LONG).show();
-        } catch (Exception e) {
-            Toast.makeText(this, "Error processing token: " + e.getMessage(), Toast.LENGTH_LONG).show();
-        }
+    private void signOut() {
+        mAuth.signOut();
+        startActivity(new Intent(this, MainActivity.class));
+        finish();
     }
 }
