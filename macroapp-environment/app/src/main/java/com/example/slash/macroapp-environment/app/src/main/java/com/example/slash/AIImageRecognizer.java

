@@ -1,0 +1,350 @@
+package com.example.slash;
+
+import android.app.AlertDialog;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.MotionEvent;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.drawerlayout.widget.DrawerLayout;
+import com.google.android.material.navigation.NavigationView;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class HomeActivity extends AppCompatActivity {
+    private static final String TAG = "HomeActivity";
+    private FirebaseAuth mAuth;
+    private FirebaseFirestore db;
+    private DrawerLayout drawerLayout;
+    private NavigationView navigationView;
+    private TextView macroStatus;
+    private Button recordButton, replayButton, cropButton, saveMacroButton, loadMacroButton;
+    private LinearLayout macroArea;
+    private boolean isRecording = false;
+    private List<Action> recordedActions = new ArrayList<>();
+    private Bitmap triggerImage;
+    private int triggerX, triggerY, triggerWidth, triggerHeight;
+    private AIImageRecognizer aiRecognizer;
+    private float triggerSensitivity = 0.8f; // Default
+    private long clickInterval = 1000; // Default 1s
+
+    private static class Action {
+        float x, y;
+        long timestamp;
+
+        Action(float x, float y, long timestamp) {
+            this.x = x;
+            this.y = y;
+            this.timestamp = timestamp;
+        }
+
+        Map<String, Object> toMap() {
+            Map<String, Object> map = new HashMap<>();
+            map.put("x", x);
+            map.put("y", y);
+            map.put("timestamp", timestamp);
+            return map;
+        }
+
+        static Action fromMap(Map<String, Object> map) {
+            float x = ((Double) map.get("x")).floatValue();
+            float y = ((Double) map.get("y")).floatValue();
+            long timestamp = (Long) map.get("timestamp");
+            return new Action(x, y, timestamp);
+        }
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_home);
+        setTitle("Slash");
+        Toast.makeText(this, "Welcome to Slash", Toast.LENGTH_SHORT).show();
+
+        mAuth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
+        aiRecognizer = new AIImageRecognizer();
+
+        drawerLayout = findViewById(R.id.drawer_layout);
+        navigationView = findViewById(R.id.nav_view);
+        macroStatus = findViewById(R.id.macro_status);
+        recordButton = findViewById(R.id.record_button);
+        replayButton = findViewById(R.id.replay_button);
+        cropButton = findViewById(R.id.crop_button);
+        saveMacroButton = findViewById(R.id.save_macro_button);
+        loadMacroButton = findViewById(R.id.load_macro_button);
+        macroArea = findViewById(R.id.macro_area);
+
+        setupNavigationDrawer();
+        setupMacroControls();
+    }
+
+    private void setupNavigationDrawer() {
+        navigationView.setNavigationItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+            if (itemId == R.id.nav_name) showNameDialog();
+            else if (itemId == R.id.nav_macro_settings) showSettingsDialog();
+            else if (itemId == R.id.nav_sign_out) signOut();
+            drawerLayout.closeDrawers();
+            return true;
+        });
+    }
+
+    private void setupMacroControls() {
+        recordButton.setOnClickListener(v -> {
+            if (!isRecording) startRecording();
+            else stopRecording();
+        });
+
+        replayButton.setOnClickListener(v -> replayMacroWithMonitoring());
+
+        cropButton.setOnClickListener(v -> startCropping());
+
+        saveMacroButton.setOnClickListener(v -> saveMacroToFirestore());
+
+        loadMacroButton.setOnClickListener(v -> loadMacroFromFirestore());
+
+        macroArea.setOnTouchListener((v, event) -> {
+            if (isRecording && event.getAction() == MotionEvent.ACTION_DOWN) {
+                float x = event.getX();
+                float y = event.getY();
+                recordedActions.add(new Action(x, y, System.currentTimeMillis()));
+                Toast.makeText(this, "Click recorded at (" + x + ", " + y + ")", Toast.LENGTH_SHORT).show();
+                Log.d(TAG, "Action recorded: x=" + x + ", y=" + y);
+            }
+            return true;
+        });
+    }
+
+    private void startRecording() {
+        isRecording = true;
+        recordedActions.clear();
+        macroStatus.setText("Macro Status: Recording");
+        recordButton.setText("Stop Recording");
+        Log.d(TAG, "Started recording macro");
+    }
+
+    private void stopRecording() {
+        isRecording = false;
+        macroStatus.setText("Macro Status: Idle");
+        recordButton.setText("Record Macro");
+        Log.d(TAG, "Stopped recording macro with " + recordedActions.size() + " actions");
+    }
+
+    private void replayMacroWithMonitoring() {
+        if (recordedActions.isEmpty()) {
+            Toast.makeText(this, "No macro recorded", Toast.LENGTH_SHORT).show();
+            Log.w(TAG, "Replay attempted with no actions");
+            return;
+        }
+        if (triggerImage == null) {
+            Toast.makeText(this, "Crop a trigger area first", Toast.LENGTH_SHORT).show();
+            Log.w(TAG, "Replay attempted without trigger");
+            return;
+        }
+        macroStatus.setText("Macro Status: Replaying with Monitoring");
+        Log.d(TAG, "Starting replay with monitoring");
+
+        Thread replayThread = new Thread(() -> {
+            long startTime = System.currentTimeMillis();
+            for (Action action : recordedActions) {
+                if (!macroStatus.getText().toString().contains("Replaying")) break;
+                long elapsed = System.currentTimeMillis() - startTime;
+                long delay = action.timestamp - recordedActions.get(0).timestamp;
+                if (elapsed < delay) {
+                    try {
+                        Thread.sleep(delay - elapsed);
+                    } catch (InterruptedException e) {
+                        Log.e(TAG, "Replay delay interrupted", e);
+                    }
+                }
+                runOnUiThread(() -> simulateClick(action.x, action.y));
+            }
+            runOnUiThread(() -> macroStatus.setText("Macro Status: Idle"));
+        });
+
+        Thread monitorThread = new Thread(() -> {
+            while (macroStatus.getText().toString().contains("Replaying")) {
+                Bitmap screenArea = captureScreenArea(triggerX, triggerY, triggerWidth, triggerHeight);
+                if (aiRecognizer.recognize(screenArea, triggerImage) && 
+                    aiRecognizer.getConfidence(screenArea, triggerImage) >= triggerSensitivity) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "Trigger detected, adjusting macro", Toast.LENGTH_SHORT).show();
+                        macroStatus.setText("Macro Status: Triggered");
+                        performTriggerAction();
+                    });
+                    break;
+                }
+                try {
+                    Thread.sleep(500); // Check every 0.5s
+                } catch (InterruptedException e) {
+                    Log.e(TAG, "Monitor interrupted", e);
+                }
+            }
+        });
+
+        replayThread.start();
+        monitorThread.start();
+    }
+
+    private void startCropping() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = getLayoutInflater().inflate(R.layout.crop_preview, null);
+        builder.setTitle("Crop Screen Trigger");
+        builder.setView(dialogView);
+
+        ImageView preview = dialogView.findViewById(R.id.crop_preview);
+        EditText cropX = dialogView.findViewById(R.id.crop_x);
+        EditText cropY = dialogView.findViewById(R.id.crop_y);
+        EditText cropWidth = dialogView.findViewById(R.id.crop_width);
+        EditText cropHeight = dialogView.findViewById(R.id.crop_height);
+
+        // Simulate preview (placeholder)
+        Bitmap previewBitmap = Bitmap.createBitmap(200, 200, Bitmap.Config.ARGB_8888);
+        preview.setImageBitmap(previewBitmap);
+
+        builder.setPositiveButton("Crop", (dialog, which) -> {
+            try {
+                triggerX = Integer.parseInt(cropX.getText().toString());
+                triggerY = Integer.parseInt(cropY.getText().toString());
+                triggerWidth = Integer.parseInt(cropWidth.getText().toString());
+                triggerHeight = Integer.parseInt(cropHeight.getText().toString());
+                triggerImage = Bitmap.createBitmap(triggerWidth, triggerHeight, Bitmap.Config.ARGB_8888);
+                Toast.makeText(this, "Trigger area cropped", Toast.LENGTH_SHORT).show();
+                Log.d(TAG, "Cropped trigger at (" + triggerX + ", " + triggerY + ") size " + triggerWidth + "x" + triggerHeight);
+            } catch (NumberFormatException e) {
+                Toast.makeText(this, "Invalid cropping values", Toast.LENGTH_SHORT).show();
+                Log.e(TAG, "Cropping failed", e);
+            }
+        });
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
+    }
+
+    private void simulateClick(float x, float y) {
+        Toast.makeText(this, "Simulated click at (" + x + ", " + y + ")", Toast.LENGTH_SHORT).show();
+        Log.d(TAG, "Simulated click at (" + x + ", " + y + ")");
+    }
+
+    private Bitmap captureScreenArea(int x, int y, int width, int height) {
+        // TODO: Implement with MediaProjection
+        return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+    }
+
+    private void performTriggerAction() {
+        // Example: Perform an alternate action (e.g., click elsewhere)
+        simulateClick(100, 100);
+        Log.d(TAG, "Performed trigger action");
+    }
+
+    private void saveMacroToFirestore() {
+        if (recordedActions.isEmpty()) {
+            Toast.makeText(this, "No macro to save", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String uid = mAuth.getCurrentUser().getUid();
+        Map<String, Object> macroData = new HashMap<>();
+        List<Map<String, Object>> actionsList = new ArrayList<>();
+        for (Action action : recordedActions) {
+            actionsList.add(action.toMap());
+        }
+        macroData.put("actions", actionsList);
+        macroData.put("triggerSensitivity", triggerSensitivity);
+        macroData.put("clickInterval", clickInterval);
+        db.collection("users").document(uid).collection("macros").document("default")
+                .set(macroData)
+                .addOnSuccessListener(aVoid -> Toast.makeText(this, "Macro saved", Toast.LENGTH_SHORT).show())
+                .addOnFailureListener(e -> Toast.makeText(this, "Failed to save macro: " + e.getMessage(), Toast.LENGTH_LONG).show());
+    }
+
+    private void loadMacroFromFirestore() {
+        String uid = mAuth.getCurrentUser().getUid();
+        db.collection("users").document(uid).collection("macros").document("default")
+                .get()
+                .addOnSuccessListener(document -> {
+                    if (document.exists()) {
+                        recordedActions.clear();
+                        @SuppressWarnings("unchecked")
+                        List<Map<String, Object>> actions = (List<Map<String, Object>>) document.get("actions");
+                        for (Map<String, Object> actionMap : actions) {
+                            recordedActions.add(Action.fromMap(actionMap));
+                        }
+                        triggerSensitivity = document.getDouble("triggerSensitivity").floatValue();
+                        clickInterval = document.getLong("clickInterval");
+                        Toast.makeText(this, "Macro loaded", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "No saved macro found", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnFailureListener(e -> Toast.makeText(this, "Failed to load macro: " + e.getMessage(), Toast.LENGTH_LONG).show());
+    }
+
+    private void showNameDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Set Profile Name");
+        final EditText input = new EditText(this);
+        input.setText(getCurrentUserName());
+        builder.setView(input);
+        builder.setPositiveButton("Save", (dialog, which) -> {
+            String name = input.getText().toString().trim();
+            if (!name.isEmpty()) saveProfileField("name", name);
+        });
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
+    }
+
+    private void showSettingsDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = getLayoutInflater().inflate(R.layout.macro_settings_dialog, null);
+        builder.setTitle("Macro Settings");
+        builder.setView(dialogView);
+
+        EditText sensitivityInput = dialogView.findViewById(R.id.trigger_sensitivity);
+        EditText intervalInput = dialogView.findViewById(R.id.click_interval);
+        sensitivityInput.setText(String.valueOf(triggerSensitivity));
+        intervalInput.setText(String.valueOf(clickInterval));
+
+        builder.setPositiveButton("Save", (dialog, which) -> {
+            try {
+                triggerSensitivity = Float.parseFloat(sensitivityInput.getText().toString());
+                clickInterval = Long.parseLong(intervalInput.getText().toString());
+                Toast.makeText(this, "Settings saved", Toast.LENGTH_SHORT).show();
+            } catch (NumberFormatException e) {
+                Toast.makeText(this, "Invalid settings values", Toast.LENGTH_SHORT).show();
+            }
+        });
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
+    }
+
+    private String getCurrentUserName() {
+        return "";
+    }
+
+    private void saveProfileField(String field, String value) {
+        String uid = mAuth.getCurrentUser().getUid();
+        Map<String, Object> profileData = new HashMap<>();
+        profileData.put(field, value);
+        db.collection("users").document(uid).set(profileData, com.google.firebase.firestore.SetOptions.merge())
+                .addOnSuccessListener(aVoid -> Toast.makeText(this, field.equals("name") ? "Name saved!" : "Settings saved!", Toast.LENGTH_SHORT).show())
+                .addOnFailureListener(e -> Toast.makeText(this, "Failed to save " + field + ": " + e.getMessage(), Toast.LENGTH_LONG).show());
+    }
+
+    private void signOut() {
+        mAuth.signOut();
+        startActivity(new Intent(this, MainActivity.class));
+        finish();
+    }
+}
