@@ -1,6 +1,8 @@
 package com.example.slash;
 
+import android.app.AlertDialog;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
@@ -24,9 +26,10 @@ public class HomeActivity extends AppCompatActivity {
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
     private TextView macroStatus;
-    private Button recordButton, replayButton, actionButton1, actionButton2;
+    private Button recordButton, replayButton, cropButton, actionButton1, actionButton2;
     private boolean isRecording = false;
     private List<Integer> recordedActions = new ArrayList<>();
+    private Bitmap croppedImage;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,19 +41,16 @@ public class HomeActivity extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
-        // Initialize UI elements
         drawerLayout = findViewById(R.id.drawer_layout);
         navigationView = findViewById(R.id.nav_view);
         macroStatus = findViewById(R.id.macro_status);
         recordButton = findViewById(R.id.record_button);
         replayButton = findViewById(R.id.replay_button);
+        cropButton = findViewById(R.id.crop_button);
         actionButton1 = findViewById(R.id.action_button_1);
         actionButton2 = findViewById(R.id.action_button_2);
 
-        // Setup navigation drawer
         setupNavigationDrawer();
-
-        // Setup macro controls
         setupMacroControls();
     }
 
@@ -75,7 +75,9 @@ public class HomeActivity extends AppCompatActivity {
             else stopRecording();
         });
 
-        replayButton.setOnClickListener(v -> replayMacro());
+        replayButton.setOnClickListener(v -> replayMacroWithTrigger());
+
+        cropButton.setOnClickListener(v -> startCropping());
 
         actionButton1.setOnClickListener(v -> {
             if (isRecording) recordedActions.add(R.id.action_button_1);
@@ -103,28 +105,60 @@ public class HomeActivity extends AppCompatActivity {
         Log.d(TAG, "Stopped recording macro with " + recordedActions.size() + " actions");
     }
 
-    private void replayMacro() {
+    private void replayMacroWithTrigger() {
         if (recordedActions.isEmpty()) {
             Toast.makeText(this, "No macro recorded", Toast.LENGTH_SHORT).show();
             Log.w(TAG, "Replay attempted with no actions");
             return;
         }
-        macroStatus.setText("Macro Status: Replaying");
-        Log.d(TAG, "Replaying macro with " + recordedActions.size() + " actions");
+        if (croppedImage == null) {
+            Toast.makeText(this, "Crop an area first to set a trigger", Toast.LENGTH_SHORT).show();
+            Log.w(TAG, "Replay attempted without cropped trigger");
+            return;
+        }
+        macroStatus.setText("Macro Status: Replaying with Trigger");
+        Log.d(TAG, "Replaying macro with " + recordedActions.size() + " actions and trigger");
         new Thread(() -> {
-            for (int id : recordedActions) {
-                runOnUiThread(() -> {
-                    if (id == R.id.action_button_1) actionButton1.performClick();
-                    else if (id == R.id.action_button_2) actionButton2.performClick();
-                });
-                try {
-                    Thread.sleep(1000); // 1-second delay between actions
-                } catch (InterruptedException e) {
-                    Log.e(TAG, "Replay interrupted", e);
+            boolean running = true;
+            int clickIndex = 0;
+            while (running && clickIndex < recordedActions.size()) {
+                // Placeholder screen check (to be replaced with real capture)
+                Bitmap currentScreen = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888);
+                if (currentScreen.getWidth() == croppedImage.getWidth()) { // Placeholder match
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "Trigger detected, stopping", Toast.LENGTH_SHORT).show();
+                        macroStatus.setText("Macro Status: Idle");
+                    });
+                    running = false;
+                } else {
+                    int id = recordedActions.get(clickIndex);
+                    runOnUiThread(() -> {
+                        if (id == R.id.action_button_1) actionButton1.performClick();
+                        else if (id == R.id.action_button_2) actionButton2.performClick();
+                    });
+                    clickIndex++;
+                    try {
+                        Thread.sleep(1000); // 1-second delay
+                    } catch (InterruptedException e) {
+                        Log.e(TAG, "Replay interrupted", e);
+                    }
                 }
             }
             runOnUiThread(() -> macroStatus.setText("Macro Status: Idle"));
         }).start();
+    }
+
+    private void startCropping() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Crop Screen");
+        builder.setMessage("Select an area (simulated for now)");
+        builder.setPositiveButton("Crop", (dialog, which) -> {
+            croppedImage = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888); // Placeholder
+            Toast.makeText(this, "Area cropped", Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "Cropped area set as trigger");
+        });
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
     }
 
     private void showNameDialog() {
@@ -156,13 +190,11 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private String getCurrentUserName() {
-        // Placeholder: Fetch from Firestore if needed
-        return "";
+        return ""; // Placeholder; fetch from Firestore if needed
     }
 
     private String getCurrentUserSettings() {
-        // Placeholder: Fetch from Firestore if needed
-        return "";
+        return ""; // Placeholder; fetch from Firestore if needed
     }
 
     private void saveProfileField(String field, String value) {
