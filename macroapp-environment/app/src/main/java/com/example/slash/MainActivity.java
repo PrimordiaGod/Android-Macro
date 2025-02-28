@@ -1,19 +1,28 @@
+package com.example.slash;
+
+import android.os.Bundle;
+import android.util.Log;
+import android.widget.Toast;
+import androidx.appcompat.app.AppCompatActivity;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
-import android.util.Log;
-import org.json.JSONObject;
+import com.google.firebase.firestore.FirebaseFirestore;
+import java.text.SimpleDateFormat;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TOKEN_URL = "https://slash-worker.primordiagod.workers.dev/";
+    private FirebaseFirestore db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Fetch token when app starts (or tie to a button)
+        db = FirebaseFirestore.getInstance();
         fetchToken();
     }
 
@@ -24,12 +33,23 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     String token = response.getString("token");
                     String expiration = response.getString("expiration");
-                    Log.d("Token", "Generated: " + token + ", Expires: " + expiration);
+                    long expirationTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                        .parse(expiration).getTime();
 
-                    // Example: Redirect if token is valid
-                    if (System.currentTimeMillis() < new Date(expiration).getTime()) {
-                        startActivity(new Intent(MainActivity.this, HomeActivity.class));
-                        finish();
+                    Log.d("Token", "Generated: " + token + ", Expires: " + expiration);
+                    if (System.currentTimeMillis() < expirationTime) {
+                        // Store in Firestore
+                        Map<String, Object> tokenData = new HashMap<>();
+                        tokenData.put("token", token);
+                        tokenData.put("expiration", expirationTime);
+                        db.collection("tokens").document(token).set(tokenData)
+                            .addOnSuccessListener(aVoid -> {
+                                Toast.makeText(this, "Token saved: " + token, Toast.LENGTH_LONG).show();
+                                // Next step (e.g., redirect or update UI)
+                            })
+                            .addOnFailureListener(e -> Log.e("Firestore", "Error: " + e.getMessage()));
+                    } else {
+                        Toast.makeText(this, "Token expired", Toast.LENGTH_LONG).show();
                     }
                 } catch (Exception e) {
                     Log.e("TokenError", "Parsing failed: " + e.getMessage());
