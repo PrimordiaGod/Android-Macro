@@ -25,12 +25,16 @@ public class MainActivity extends AppCompatActivity {
         tokenInput = findViewById(R.id.token_input);
         submitButton = findViewById(R.id.submit_button);
 
-        // Sign in anonymously for profile customization
         if (mAuth.getCurrentUser() == null) {
+            Toast.makeText(this, "Attempting anonymous sign-in...", Toast.LENGTH_SHORT).show();
             mAuth.signInAnonymously()
-                    .addOnSuccessListener(authResult -> setupUI())
+                    .addOnSuccessListener(authResult -> {
+                        Toast.makeText(this, "Sign-in successful", Toast.LENGTH_SHORT).show();
+                        setupUI();
+                    })
                     .addOnFailureListener(e -> {
-                        Toast.makeText(this, "Authentication failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        String errorMessage = "Authentication failed: " + e.getMessage();
+                        Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show();
                         finish();
                     });
         } else {
@@ -39,6 +43,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupUI() {
+        Toast.makeText(this, "UI setup complete", Toast.LENGTH_SHORT).show();
         submitButton.setOnClickListener(v -> {
             String tokenJson = tokenInput.getText().toString().trim();
             if (!tokenJson.isEmpty()) {
